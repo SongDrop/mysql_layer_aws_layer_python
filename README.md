@@ -39,46 +39,47 @@ rds_client = boto3.client('rds')
 
 #SECRET MANAGER GET_DB_KEY
 def generateToken():
-logging.info('Generate database token...')
-try:
-token = rds_client.generate_db_auth_token(
-DBHostname=os.environ['DB_HOST'],
-Port=3306,
-DBUsername=os.environ['DB_USER'],
-Region=os.environ['AWS_REGION'],
-)
-logging.info('Token successfully obtained. Start complete.')
-return token
-#❌TOKEN_ERROR
-except mysql.connector.Error as err:
-logger.error(err.msg)
-error = "Connection error"
-return log_err(error)
+    logging.info('Generate database token...')
+    try:
+        token = rds_client.generate_db_auth_token(
+            DBHostname=os.environ['DB_HOST'],
+            Port=3306,
+            DBUsername=os.environ['DB_USER'],
+            Region=os.environ['AWS_REGION'],
+            )
+        logging.info('Token successfully obtained. Start complete.')
+        return token
+    #❌TOKEN_ERROR
+    except mysql.connector.Error as err:
+    logger.error(err.msg)
+    error = "Connection error"
+    return log_err(error)
 
 #RDS_CONNECTION
 def make_connection():
 database_token = generateToken()
- #CHECK_TOKEN_VALID_DATE
-return mysql.connector.connect(
-host=os.environ['DB_HOST'],
-port=3306,
-database=os.environ['DB_NAME'],
-user=os.environ['DB_USER'],
-password=database_token)
+    #CHECK_TOKEN_VALID_DATE
+    return mysql.connector.connect(
+        host=os.environ['DB_HOST'],
+        port=3306,
+        database=os.environ['DB_NAME'],
+        user=os.environ['DB_USER'],
+        password=database_token)
 
 #LAMBDA_HANDLER
 def lambda_handler(event, context):
-context.callbackWaitsForEmptyEventLoop = False
-logging.info('Connecting to database...')
+    context.callbackWaitsForEmptyEventLoop = False
+    logging.info('Connecting to database...')
 
-    #SAFE
+    #CONNECT
     try:
         cnx = make_connection()
         logging.info('Connected!!')
         cursor = cnx.cursor(dictionary=True)
 
+        #HERE IS YOUR SQL COMMAND LIST
 
-        #CLOSE_DB_CONNECTION
+        #CLOSE_DB_CONNECTION_AFTER SQL COMMANDS
         cnx.close()
         #✅SUCCESS
         result = {
@@ -98,14 +99,14 @@ logging.info('Connecting to database...')
 
 #ERROR_MESSAGE
 def log_err(errmsg):
-logger.error(errmsg)
-return {"body": json.dumps({"error": errmsg}), "headers": {'Content-Type': 'application/json',
-'Access-Control-Allow-Origin':'\*'}, "statusCode": 400,
-"isBase64Encoded": "false"}
+    logger.error(errmsg)
+    return {"body": json.dumps({"error": errmsg}), "headers": {'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin':'\*'}, "statusCode": 400,
+    "isBase64Encoded": "false"}
 
 #SUCCESS_MESSAGE
 def success(result):
-return {'body': json.dumps({"result": result}), 'headers': {'Content-Type': 'application/json',
-'Access-Control-Allow-Origin':'\*'}, 'statusCode': 200,
-'isBase64Encoded': 'false'}
+    return {'body': json.dumps({"result": result}), 'headers': {'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin':'\*'}, 'statusCode': 200,
+    'isBase64Encoded': 'false'}
 ```
